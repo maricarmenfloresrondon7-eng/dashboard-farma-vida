@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farma-Vida | Ecosistema Digital de Control CRM</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#f2f5f7; --card:#ffffff; --border:#e6ebf0; --text:#20303d; --muted:#7c8a9a;
+    --teal:#12a889; --tealDark:#0c8a71; --tealSoft:#e3f6f1;
+    --orange:#e08a3c; --green:#2f9e6a; --purple:#8b5fbf; --red:#e0645f;
+    --verde:#2f9e6a; --amarillo:#dba82e; --rojo:#d95b56;
+    --sidebar:#12211f;
+  }
+  * { box-sizing: border-box; }
+  html, body { height:100%; }
+  body {
+    margin:0; font-family:'Segoe UI', Arial, sans-serif; background:var(--bg); color:var(--text);
+  }
+  .appShell { display:flex; min-height:100vh; }
+
+  /* ---------- SIDEBAR ---------- */
+  .sidebar { width:84px; background:var(--sidebar); display:flex; flex-direction:column; align-items:center; padding:20px 0; gap:6px; flex-shrink:0; }
+  .sidebar .brand { width:34px; height:34px; border-radius:9px; background:var(--teal); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; margin-bottom:26px; }
+  .navBtn { width:64px; padding:10px 4px; border-radius:10px; background:transparent; border:none; color:#9fb8b0; font-size:10.5px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:5px; margin-bottom:6px; }
+  .navBtn .ic { font-size:18px; }
+  .navBtn.active { background:rgba(18,168,137,0.18); color:#8fe6cd; }
+  .navBtn:hover { background:rgba(255,255,255,0.06); }
+
+  /* ---------- MAIN ---------- */
+  .main { flex:1; display:flex; flex-direction:column; min-width:0; }
+  .topbar { background:#fff; border-bottom:1px solid var(--border); padding:14px 28px; display:flex; align-items:center; gap:16px; }
+  .topbar h1 { font-size:17px; margin:0; }
+  .topbar p { margin:2px 0 0; font-size:11.5px; color:var(--muted); }
+  .searchBox { flex:1; max-width:360px; margin-left:20px; }
+  .searchBox input { width:100%; padding:8px 14px; border-radius:20px; border:1px solid var(--border); background:#f7f9fa; font-size:12.5px; color:var(--text); }
+  .liveTag { font-size:11px; color:var(--tealDark); background:var(--tealSoft); padding:6px 12px; border-radius:20px; white-space:nowrap; margin-left:auto; }
+  .liveTag .dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--teal); margin-right:6px; animation: pulse 1.4s infinite; }
+  @keyframes pulse { 0%{opacity:1;} 50%{opacity:.3;} 100%{opacity:1;} }
+  .avatar { width:32px; height:32px; border-radius:50%; background:#dfe6ea; display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--muted); }
+
+  .content { padding:22px 28px 40px; overflow-y:auto; }
+  .tabPanel { display:none; }
+  .tabPanel.active { display:block; }
+
+  /* ---------- HERO BANNER ---------- */
+  .hero { background:linear-gradient(120deg, var(--teal), var(--tealDark)); border-radius:16px; padding:20px 26px; color:#fff; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; }
+  .hero .heroValue { font-size:28px; font-weight:700; }
+  .hero .heroLabel { font-size:12.5px; opacity:0.9; margin-top:2px; }
+  .hero .heroPill { background:rgba(255,255,255,0.18); padding:6px 14px; border-radius:20px; font-size:12px; }
+
+  /* ---------- FILTERS ---------- */
+  .filters { display:flex; gap:10px; margin: 0 0 18px; flex-wrap: wrap; align-items:center; }
+  .filters select, .filters input {
+    background: #fff; border:1px solid var(--border); color: var(--text);
+    padding:8px 12px; border-radius:8px; font-size:12.5px;
+  }
+  .filters select { cursor:pointer; }
+  .filters .tag { font-size:11px; color:var(--tealDark); background:var(--tealSoft); padding:6px 12px; border-radius:8px; }
+
+  /* ---------- KPI CARDS ---------- */
+  .kpis { display:grid; grid-template-columns: repeat(5, 1fr); gap:14px; margin-bottom: 20px; }
+  .kpi { background: var(--card); border:1px solid var(--border); border-radius:14px; padding:16px 18px; box-shadow:0 1px 3px rgba(20,40,50,0.05); }
+  .kpi .icon { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:16px; margin-bottom:10px; background:var(--tealSoft); color:var(--tealDark); }
+  .kpi.orange .icon { background:#fbe9d9; color:var(--orange); }
+  .kpi.green .icon { background:#e2f2e8; color:var(--green); }
+  .kpi.purple .icon { background:#eee4f7; color:var(--purple); }
+  .kpi.red .icon { background:#fbe3e2; color:var(--red); }
+  .kpi .value { font-size: 21px; font-weight:700; color:var(--text); }
+  .kpi .label { font-size: 11.5px; color: var(--muted); margin-top:2px; }
+  .kpi .delta { font-size: 11px; margin-top:8px; font-weight:600; }
+  .delta.up { color:var(--green); } .delta.down { color:var(--red); }
+
+  .grid { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px; margin-bottom:16px; }
+  .panel { background: var(--card); border:1px solid var(--border); border-radius:14px; padding:16px 18px 8px; box-shadow:0 1px 3px rgba(20,40,50,0.05); }
+  .panel h3 { margin:0 0 6px; font-size:13.5px; color:var(--text); font-weight:700; }
+  .panel .sub { font-size:11px; color:var(--muted); margin: -2px 0 10px; }
+  canvas { max-height: 230px; }
+
+  .alertList { display:flex; flex-direction:column; gap:10px; }
+  .alertItem { border-radius:10px; padding:11px 13px; font-size:12.5px; border-left:4px solid var(--border); background:#f8fafb; }
+  .alertItem.rojo { border-left-color: var(--rojo); background:#fdf1f0; }
+  .alertItem.amarillo { border-left-color: var(--amarillo); background:#fdf7ea; }
+  .alertItem.verde { border-left-color: var(--verde); background:#eef8f1; }
+  .alertItem b { color:var(--text); }
+
+  .clientsToolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+  .clientsToolbar input { min-width:180px; }
+  .countPill { font-size:11.5px; color:var(--muted); }
+
+  table.clientTable { width:100%; border-collapse:collapse; font-size:12px; }
+  table.clientTable th { text-align:left; color:var(--muted); font-weight:700; padding:9px 8px; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card); }
+  table.clientTable td { padding:9px 8px; border-bottom:1px solid #eef1f4; }
+  table.clientTable tr:hover td { background:#f6faf9; }
+
+  .badge { display:inline-block; font-size:10px; padding:2px 7px; border-radius:10px; margin:1px 2px 1px 0; background:#eef2f5; color:var(--muted); }
+  .badge.on { background:#fbe3e2; color:#c04a45; }
+
+  .estado-pill { padding:3px 10px; border-radius:12px; font-size:11px; font-weight:700; }
+  .estado-pill.verde { background:#e2f2e8; color:#278356; }
+  .estado-pill.amarillo { background:#fbf1d6; color:#a3801f; }
+  .estado-pill.rojo { background:#fbe3e2; color:#c04a45; }
+
+  .detailBtn { background: var(--teal); border:none; color:#fff; padding:6px 12px; border-radius:8px; font-size:11px; cursor:pointer; font-weight:600; }
+  .suggestionBox { margin-top:8px; padding:10px 12px; border-radius:8px; background:#eef2f5; border-left:3px solid var(--teal); }
+  .suggestionBox.rojo { border-left-color:var(--rojo); background:#fdf1f0; }
+  .suggestionBox.amarillo { border-left-color:var(--amarillo); background:#fdf7ea; }
+  .suggestionBox .tagLine { font-size:10.5px; text-transform:uppercase; letter-spacing:0.4px; color:var(--tealDark); font-weight:700; }
+
+  .pager { display:flex; gap:8px; align-items:center; margin-top:12px; font-size:12px; }
+  .pager button { background:#fff; border:1px solid var(--border); color:var(--text); padding:6px 12px; border-radius:8px; cursor:pointer; }
+  .pager button:disabled { opacity:0.4; cursor:default; }
+
+  footer { margin-top:20px; font-size:11px; color:var(--muted); text-align:center; }
+
+  /* ---------- MODAL: PERFIL DE CLIENTE ---------- */
+  .modalOverlay { position:fixed; inset:0; background:rgba(14,28,32,0.55); display:flex; align-items:center; justify-content:center; z-index:1000; padding:24px; }
+  .modalOverlay.hidden { display:none; }
+  .clientModal { background:#fff; border-radius:16px; width:100%; max-width:980px; max-height:88vh; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 24px 60px rgba(10,25,30,0.3); }
+  .modalHead { display:flex; align-items:center; justify-content:space-between; padding:14px 22px; border-bottom:1px solid var(--border); flex-shrink:0; }
+  .modalHead .modalHeadLeft { display:flex; align-items:center; gap:10px; font-size:12.5px; color:var(--muted); }
+  .modalHead .modalHeadLeft b { color:var(--text); font-size:14.5px; }
+  .modalClose { background:#f2f5f7; border:none; width:28px; height:28px; border-radius:50%; font-size:15px; cursor:pointer; color:var(--muted); }
+  .modalClose:hover { background:#e6ebf0; }
+  .modalBanner { margin:16px 22px 0; background:linear-gradient(120deg, var(--teal), var(--tealDark)); border-radius:12px; padding:12px 18px; color:#fff; font-size:12.5px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .modalBanner.rojo { background:linear-gradient(120deg, #e0645f, #c0433e); }
+  .modalBanner.amarillo { background:linear-gradient(120deg, #dba82e, #b8871a); }
+  .modalBanner .tagLine { font-size:9.5px; text-transform:uppercase; letter-spacing:0.5px; opacity:0.85; margin-bottom:2px; }
+  .modalBody { display:flex; overflow:hidden; flex:1; min-height:0; }
+  .modalSide { width:240px; flex-shrink:0; border-right:1px solid var(--border); padding:20px 18px; overflow-y:auto; background:#fafcfd; }
+  .modalAvatar { width:60px; height:60px; border-radius:50%; background:var(--tealSoft); color:var(--tealDark); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:700; margin-bottom:12px; }
+  .modalName { font-size:15px; font-weight:700; color:var(--text); line-height:1.3; }
+  .modalSub { font-size:11.5px; color:var(--muted); margin-top:2px; }
+  .modalTags { display:flex; gap:6px; flex-wrap:wrap; margin:12px 0 4px; }
+  .modalTag { font-size:10px; font-weight:700; padding:3px 9px; border-radius:10px; background:#eef2f5; color:var(--muted); }
+  .modalTag.vip { background:#fbe9d9; color:var(--orange); }
+  .modalTag.risk { background:#fbe3e2; color:#c04a45; }
+  .modalTag.cluster { background:var(--tealSoft); color:var(--tealDark); }
+  .modalContact { display:flex; gap:8px; margin:14px 0 6px; }
+  .modalContact span { width:28px; height:28px; border-radius:8px; background:#eef2f5; color:var(--muted); display:flex; align-items:center; justify-content:center; font-size:12px; }
+  .modalInfoList { margin-top:14px; display:flex; flex-direction:column; gap:11px; font-size:11.5px; border-top:1px solid var(--border); padding-top:14px; }
+  .modalInfoList .row { display:flex; justify-content:space-between; gap:8px; color:var(--muted); }
+  .modalInfoList .row b { color:var(--text); font-weight:600; text-align:right; }
+  .modalMain { flex:1; display:flex; flex-direction:column; min-width:0; overflow-y:auto; }
+  .modalTabs { display:flex; gap:2px; padding:0 22px; border-bottom:1px solid var(--border); flex-shrink:0; overflow-x:auto; }
+  .modalTabBtn { background:none; border:none; padding:13px 11px; font-size:11.5px; font-weight:700; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap; }
+  .modalTabBtn.active { color:var(--tealDark); border-bottom-color:var(--teal); }
+  .modalTabBtn:hover { color:var(--tealDark); }
+  .modalPanel { display:none; padding:18px 22px 26px; }
+  .modalPanel.active { display:block; }
+  .modalSectionTitle { font-size:10.5px; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); font-weight:700; margin:0 0 8px; }
+  .engRow { display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid #eef1f4; font-size:12.5px; }
+  .engRow:last-child { border-bottom:none; }
+  .engRow .engLabel { display:flex; align-items:center; gap:8px; color:var(--text); font-weight:600; }
+  .engRow .engDot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .engRow .engVal { color:var(--muted); font-weight:600; }
+  .modalChartBox { margin-top:16px; }
+  .modalChartBox canvas { max-height:150px; }
+  .modalTwoCol { display:grid; grid-template-columns: 1fr 1fr; gap:20px; }
+
+  /* ==================== RESPONSIVE: TABLET Y CELULAR ==================== */
+
+  /* ---- Tablet (≤1024px): 3 KPIs, gráficos en 2 columnas, sidebar más angosto ---- */
+  @media (max-width: 1024px){
+    .sidebar { width:70px; }
+    .navBtn { width:56px; font-size:9.5px; }
+    .kpis { grid-template-columns: repeat(3, 1fr); }
+    .grid { grid-template-columns: 1fr 1fr; }
+    .grid[style*="1fr 1fr"] { grid-template-columns: 1fr 1fr; }
+    .modalSide { width:210px; }
+  }
+
+  /* ---- Celular / tablet vertical (≤768px): sidebar como barra horizontal ---- */
+  @media (max-width: 768px){
+    .appShell { flex-direction:column; min-height:auto; }
+    .sidebar { width:100%; flex-direction:row; justify-content:space-around; align-items:center; padding:8px 6px; gap:0; order:2; }
+    .sidebar .brand { display:none; }
+    .navBtn { width:auto; flex:1; margin-bottom:0; padding:8px 4px; }
+
+    .topbar { flex-wrap:wrap; padding:12px 16px; row-gap:10px; }
+    .topbar h1 { font-size:15px; }
+    .topbar p { font-size:10.5px; }
+    .searchBox { order:4; max-width:none; width:100%; margin-left:0; }
+    .liveTag { order:3; margin-left:0; }
+    .avatar { order:1; margin-left:auto; }
+
+    .content { padding:16px 16px 32px; }
+    .hero { padding:16px 18px; }
+    .hero .heroValue { font-size:22px; }
+
+    .kpis { grid-template-columns: repeat(2, 1fr); gap:10px; }
+    .kpi { padding:13px 14px; }
+    .kpi .value { font-size:18px; }
+
+    .grid, .grid[style*="1fr 1fr"] { grid-template-columns: 1fr !important; }
+
+    table.clientTable { font-size:11px; }
+    .clientsToolbar input, .clientsToolbar select { flex:1; min-width:140px; }
+
+    .modalTwoCol { grid-template-columns: 1fr; }
+    .modalBody { flex-direction:column; }
+    .modalSide { width:auto; border-right:none; border-bottom:1px solid var(--border); flex-direction:row; flex-wrap:wrap; align-items:center; gap:0 14px; padding:14px 18px; }
+    .modalAvatar { margin-bottom:0; }
+    .modalInfoList { flex-basis:100%; border-top:1px solid var(--border); }
+    .modalContact { flex-basis:100%; }
+  }
+
+  /* ---- Celular pequeño (≤480px): modal a pantalla completa, KPIs apilados ---- */
+  @media (max-width: 480px){
+    .navBtn { font-size:0; padding:9px 6px; }
+    .navBtn .ic { font-size:19px; }
+
+    .kpis { grid-template-columns: 1fr 1fr; gap:8px; }
+    .kpi .icon { width:28px; height:28px; font-size:14px; margin-bottom:6px; }
+    .kpi .value { font-size:16px; }
+    .kpi .label { font-size:10.5px; }
+
+    .filters, .clientsToolbar { gap:8px; }
+    .filters select, .filters input, .clientsToolbar input, .clientsToolbar select { font-size:11.5px; padding:7px 10px; }
+
+    .modalOverlay { padding:0; align-items:flex-end; }
+    .clientModal { max-width:100%; max-height:96vh; border-radius:16px 16px 0 0; }
+    .modalSide { padding:12px 16px; }
+    .modalName { font-size:14px; }
+    .modalTabs { padding:0 14px; }
+    .modalTabBtn { padding:12px 8px; font-size:10px; }
+    .modalPanel { padding:14px 16px 22px; }
+    .modalBanner { margin:12px 14px 0; padding:10px 14px; flex-direction:column; align-items:flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<div class="appShell">
+  <aside class="sidebar">
+    <div class="brand">FV</div>
+    <button class="navBtn active" data-tab="resumen"><span class="ic">📊</span>Resumen</button>
+    <button class="navBtn" data-tab="clientes"><span class="ic">👥</span>Clientes</button>
+    <button class="navBtn" data-tab="dashboard"><span class="ic">📈</span>Dashboard</button>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <h1>FARMA-VIDA · Ecosistema Digital de Control CRM</h1>
+        <p>Valor de cliente, riesgo de fuga y calidad de servicio</p>
+      </div>
+      <div class="searchBox" style="display:flex; gap:6px;">
+        <input type="text" id="globalSearch" placeholder="Buscar cliente (ID o nombre), clúster o indicador...">
+        <button id="globalSearchBtn" style="background:var(--teal); border:none; color:#fff; border-radius:20px; padding:8px 14px; font-size:12px; cursor:pointer; white-space:nowrap;">Buscar</button>
+      </div>
+      <div class="liveTag"><span class="dot"></span>Monitoreo en vivo · <span id="clockTxt">--:--:--</span></div>
+      <div class="avatar">MG</div>
+    </div>
+
+    <div class="content">
+
+      <!-- ============ TAB 1: RESUMEN ============ -->
+      <div class="tabPanel active" id="tab-resumen">
+
+        <div class="hero">
+          <div>
+            <div class="heroValue" id="heroLtv">S/ —</div>
+            <div class="heroLabel">Valor total de cartera de clientes (LTV agregado) · <span id="totalClientesTxt">—</span> clientes con Perfil 360 activo</div>
+          </div>
+          <div class="heroPill" id="heroChurnPill">Churn actual: 8.2%</div>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi">
+            <div class="icon">↻</div>
+            <div class="value">8.2%</div>
+            <div class="label">Churn Rate mensual</div>
+            <div class="delta down">Meta: 6.2%</div>
+          </div>
+          <div class="kpi orange">
+            <div class="icon">S/</div>
+            <div class="value">S/ 132</div>
+            <div class="label">CAC promedio ponderado</div>
+            <div class="delta down">+35% interanual</div>
+          </div>
+          <div class="kpi green">
+            <div class="icon">★</div>
+            <div class="value">+41</div>
+            <div class="label">Net Promoter Score</div>
+            <div class="delta up">▲ 8 pts vs. trimestre anterior</div>
+          </div>
+          <div class="kpi purple">
+            <div class="icon">☎</div>
+            <div class="value">68%</div>
+            <div class="label">First Contact Resolution</div>
+            <div class="delta up">▲ 6 pts vs. trimestre anterior</div>
+          </div>
+          <div class="kpi red">
+            <div class="icon">🚚</div>
+            <div class="value">72 hrs</div>
+            <div class="label">Tiempo de entrega delivery (CES)</div>
+            <div class="delta down">Meta: 24 hrs</div>
+          </div>
+        </div>
+
+        <div class="grid" style="grid-template-columns: 1fr 1fr;">
+          <div class="panel">
+            <h3>Lo más urgente ahora mismo</h3>
+            <div class="sub">Inferencias con IA generadas a partir de la base de clientes monitoreada</div>
+            <div class="alertList" id="resumenAlerts"></div>
+          </div>
+          <div class="panel">
+            <h3>Base de clientes por estado de riesgo</h3>
+            <div class="sub">Semáforo agregado del modelo predictivo de fuga (Churn Model)</div>
+            <canvas id="estadoDonut" style="max-height:210px;"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ TAB 2: CLIENTES ============ -->
+      <div class="tabPanel" id="tab-clientes">
+        <div class="clientsToolbar">
+          <input type="text" id="searchInput" placeholder="Buscar por ID (ej. CL-0045)">
+          <select id="clusterFilterC">
+            <option value="todos">Todos los clústeres</option>
+            <option value="cronicos">Pacientes Crónicos</option>
+            <option value="estetico">Cuidado Estético</option>
+            <option value="mamas">Mamás / Bebés</option>
+          </select>
+          <select id="estadoFilterC">
+            <option value="todos">Todos los estados</option>
+            <option value="verde">🟢 Verde</option>
+            <option value="amarillo">🟡 Amarillo</option>
+            <option value="rojo">🔴 Rojo</option>
+          </select>
+          <span class="countPill" id="resultCount"></span>
+          <span class="countPill" id="liveEventsTxt" style="margin-left:auto;">Eventos en vivo detectados: 0</span>
+        </div>
+
+        <div class="panel" style="overflow-x:auto;">
+          <table class="clientTable">
+            <thead>
+              <tr>
+                <th>ID</th><th>Cliente</th><th>Clúster</th><th>Antig. (m)</th><th>Últ. compra (d)</th>
+                <th>Ticket prom.</th><th>LTV</th><th>Delivery</th><th>T. entrega</th>
+                <th>Señales de riesgo</th><th>Estado</th><th>Perfil 360</th>
+              </tr>
+            </thead>
+            <tbody id="clientTbody"></tbody>
+          </table>
+          <div class="pager">
+            <button id="prevPage">← Anterior</button>
+            <span id="pageInfo">Página 1</span>
+            <button id="nextPage">Siguiente →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ TAB 3: DASHBOARD ============ -->
+      <div class="tabPanel" id="tab-dashboard">
+        <div class="filters">
+          <select id="clusterFilter">
+            <option value="todos">Todos los clústeres</option>
+            <option value="cronicos">Pacientes Crónicos</option>
+            <option value="estetico">Cuidado Estético</option>
+            <option value="mamas">Mamás / Bebés</option>
+          </select>
+          <select id="periodoFilter">
+            <option value="12m">Últimos 12 meses</option>
+            <option value="6m">Últimos 6 meses</option>
+          </select>
+          <span class="tag" id="viewTag">Vista: Todos los clústeres · 12 meses</span>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi">
+            <div class="icon">↻</div>
+            <div class="value" id="kpiChurn">8.2%</div>
+            <div class="label">Churn Rate mensual</div>
+            <div class="delta down" id="kpiChurnDelta">Meta: 6.2%</div>
+          </div>
+          <div class="kpi orange">
+            <div class="icon">S/</div>
+            <div class="value" id="kpiCac">S/ 132</div>
+            <div class="label">CAC promedio ponderado</div>
+            <div class="delta down" id="kpiCacDelta">+35% interanual</div>
+          </div>
+          <div class="kpi green">
+            <div class="icon">★</div>
+            <div class="value" id="kpiNps">+41</div>
+            <div class="label">Net Promoter Score</div>
+            <div class="delta up" id="kpiNpsDelta">▲ 8 pts vs. trimestre anterior</div>
+          </div>
+          <div class="kpi purple">
+            <div class="icon">☎</div>
+            <div class="value" id="kpiFcr">68%</div>
+            <div class="label">First Contact Resolution</div>
+            <div class="delta up" id="kpiFcrDelta">▲ 6 pts vs. trimestre anterior</div>
+          </div>
+          <div class="kpi red">
+            <div class="icon">🚚</div>
+            <div class="value" id="kpiCes">72 hrs</div>
+            <div class="label">Tiempo de entrega delivery (CES)</div>
+            <div class="delta down" id="kpiCesDelta">Meta: 24 hrs</div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="panel">
+            <h3>LTV por clúster de cliente (S/)</h3>
+            <div class="sub">Customer Lifetime Value proyectado, 24 meses</div>
+            <canvas id="ltvChart"></canvas>
+          </div>
+          <div class="panel">
+            <h3>CAC vs. ROI por campaña</h3>
+            <div class="sub">Costo de adquisición cruzado con retorno de marketing automation</div>
+            <canvas id="cacRoiChart"></canvas>
+          </div>
+          <div class="panel">
+            <h3>Distribución de clientes por clúster</h3>
+            <div class="sub">Base activa del programa Puntos Farma</div>
+            <canvas id="segmentPie"></canvas>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="panel">
+            <h3>Evolución del Churn Rate mensual</h3>
+            <div class="sub">Efecto proyectado de las alertas de retención del CRM predictivo</div>
+            <canvas id="churnTrend"></canvas>
+          </div>
+          <div class="panel">
+            <h3>NPS y FCR — tendencia</h3>
+            <div class="sub">Indicadores de experiencia y servicio</div>
+            <canvas id="npsFcrChart"></canvas>
+          </div>
+          <div class="panel">
+            <h3>Tiempo de entrega delivery web (CES)</h3>
+            <div class="sub">Horas promedio de despacho vs. meta de 24 hrs</div>
+            <canvas id="cesTrend"></canvas>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Inferencias y recomendaciones del CRM predictivo (IA)</h3>
+          <div class="sub">Generadas automáticamente cruzando el clúster seleccionado con la base de clientes monitoreada</div>
+          <div class="alertList" id="dashboardAlerts"></div>
+        </div>
+      </div>
+
+    </div>
+    <footer>Farma-Vida · Trabajo Académico Final — Marketing de Base de Datos y CRM · Datos ilustrativos con fines académicos, generados para fines de simulación</footer>
+  </div>
+</div>
+
+<!-- ============ MODAL: PERFIL 360 DE CLIENTE ============ -->
+<div class="modalOverlay hidden" id="clientModalOverlay">
+  <div class="clientModal">
+    <div class="modalHead">
+      <div class="modalHeadLeft">👥 Perfil de Cliente &nbsp;›&nbsp; <b id="modalHeadName">—</b></div>
+      <button class="modalClose" id="modalCloseBtn">✕</button>
+    </div>
+    <div class="modalBanner" id="modalBanner"></div>
+    <div class="modalBody">
+      <aside class="modalSide">
+        <div class="modalAvatar" id="modalAvatar">--</div>
+        <div class="modalName" id="modalName">—</div>
+        <div class="modalSub" id="modalSubId">—</div>
+        <div class="modalTags" id="modalTags"></div>
+        <div class="modalContact">
+          <span title="Llamar">📞</span>
+          <span title="WhatsApp">💬</span>
+          <span title="Email">✉️</span>
+        </div>
+        <div class="modalInfoList" id="modalInfoList"></div>
+      </aside>
+      <div class="modalMain">
+        <div class="modalTabs" id="modalTabs">
+          <button class="modalTabBtn active" data-mtab="resumen">RESUMEN</button>
+          <button class="modalTabBtn" data-mtab="historial">HISTORIAL DE COMPRAS</button>
+          <button class="modalTabBtn" data-mtab="accion">PRÓXIMA ACCIÓN</button>
+          <button class="modalTabBtn" data-mtab="info">INFO ADICIONAL</button>
+        </div>
+        <div class="modalPanel active" id="mpanel-resumen">
+          <div class="modalSectionTitle">Engagement del cliente</div>
+          <div id="engagementRows"></div>
+          <div class="modalChartBox">
+            <div class="modalSectionTitle">Dinámica de compras (ticket por visita)</div>
+            <canvas id="modalTicketChart"></canvas>
+          </div>
+        </div>
+        <div class="modalPanel" id="mpanel-historial">
+          <div class="modalSectionTitle">Historial de compras recientes</div>
+          <div id="modalHistorial"></div>
+        </div>
+        <div class="modalPanel" id="mpanel-accion">
+          <div class="modalSectionTitle">Canal recomendado</div>
+          <div id="modalCanalBox" style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; background:#eef2f5; margin-bottom:6px;">
+            <span id="modalCanalIcon" style="font-size:18px;">💬</span>
+            <div>
+              <div id="modalCanalNombre" style="font-weight:700; font-size:13px; color:var(--text);">—</div>
+              <div id="modalCanalRazon" style="font-size:11.5px; color:var(--muted);">—</div>
+            </div>
+          </div>
+
+          <div class="modalSectionTitle" style="margin-top:18px;">Mensaje / guion sugerido</div>
+          <div class="suggestionBox" id="modalSuggestionBox">
+            <div class="tagLine" id="modalSuggestionTag">Listo para enviar</div>
+            <div id="modalSuggestionText" style="margin-top:6px; white-space:pre-line; line-height:1.55;"></div>
+            <button id="modalCopyBtn" style="margin-top:12px; background:var(--teal); border:none; color:#fff; padding:7px 14px; border-radius:8px; font-size:11.5px; font-weight:600; cursor:pointer;">📋 Copiar mensaje</button>
+            <span id="modalCopiedTag" style="margin-left:8px; font-size:11px; color:var(--tealDark); display:none;">¡Copiado!</span>
+          </div>
+
+          <div class="modalSectionTitle" style="margin-top:18px;">Por qué esta oferta</div>
+          <div id="modalActionWhy" style="font-size:12px; color:var(--muted); line-height:1.6;"></div>
+        </div>
+        <div class="modalPanel" id="mpanel-info">
+          <div class="modalSectionTitle">Señales de riesgo activas</div>
+          <div id="modalBadges" style="margin-bottom:14px;"></div>
+          <div id="modalBebeInfo"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==================== 1. GENERACIÓN DE BASE DE CLIENTES ==================== */
+const CLUSTERS = {
+  cronicos: { label:'Pacientes Crónicos', weight:0.45, ltvBase:1840, ticketBase:180, color:'#12a889' },
+  estetico: { label:'Cuidado Estético',    weight:0.33, ltvBase:1120, ticketBase:140, color:'#e08a3c' },
+  mamas:    { label:'Mamás / Bebés',       weight:0.22, ltvBase:980,  ticketBase:95,  color:'#2f9e6a' }
+};
+const MOTIVOS_BEBE = ['Respiratorio','Dérmico / Piel','Nutrición / Fórmula','Digestivo','Higiene y cuidado'];
+const N_CLIENTES = 180;
+
+const NOMBRES = ['María','Carlos','Rosa','Luis','Ana','Jorge','Fiorella','Miguel','Karina','Diego','Lucía','Renato','Pamela','Jhon','Silvia','Andrea','Raúl','Milagros','Víctor','Gaby'];
+const APELLIDOS = ['Quispe','Rojas','Huamán','Torres','García','Flores','Ramos','Mendoza','Salazar','Cárdenas','Vargas','Injante','Palomino','Espinoza','Cóndor'];
+
+const PRODUCTOS = {
+  cronicos: [
+    { n:'Losartán 50mg', receta:true },
+    { n:'Metformina 850mg', receta:true },
+    { n:'Enalapril 10mg', receta:true },
+    { n:'Atorvastatina 20mg', receta:true },
+    { n:'Insulina Glargina', receta:true },
+    { n:'Ácido acetilsalicílico 100mg', receta:false }
+  ],
+  estetico: [
+    { n:'Protector solar FPS50', receta:false },
+    { n:'Sérum de Vitamina C', receta:false },
+    { n:'Crema hidratante facial', receta:false },
+    { n:'Minoxidil 5%', receta:false },
+    { n:'Ácido hialurónico tópico', receta:false },
+    { n:'Tretinoína crema 0.05%', receta:true }
+  ],
+  mamas: [
+    { n:'Fórmula infantil etapa 1', receta:false },
+    { n:'Pañales talla RN', receta:false },
+    { n:'Paracetamol pediátrico gotas', receta:false },
+    { n:'Vitamina D pediátrica', receta:false },
+    { n:'Crema para pañalitis', receta:false },
+    { n:'Amoxicilina suspensión pediátrica', receta:true }
+  ]
+};
+
+function pickNombre(){ return NOMBRES[randInt(0,NOMBRES.length-1)] + ' ' + APELLIDOS[randInt(0,APELLIDOS.length-1)]; }
+
+/* ==================== 1b. CATÁLOGO DE PROMOS POR PRODUCTO (Next Best Offer) ==================== */
+const PROMO_POR_PRODUCTO = {
+  'Losartán 50mg': 'tu recompra de Losartán 50mg con 15% de descuento + control de presión arterial gratuito',
+  'Metformina 850mg': 'tu Metformina 850mg con 15% de descuento y recordatorio automático de recompra mensual',
+  'Enalapril 10mg': 'tu recompra de Enalapril 10mg con 15% de descuento + kit de control de presión de regalo',
+  'Atorvastatina 20mg': 'tu Atorvastatina 20mg con 15% de descuento + perfil lipídico gratuito',
+  'Insulina Glargina': 'tu Insulina Glargina con envío prioritario y 10% de descuento para asegurar tu stock',
+  'Ácido acetilsalicílico 100mg': 'tu Ácido acetilsalicílico 100mg en pack trimestral con 10% de descuento',
+  'Protector solar FPS50': 'un combo Protector Solar FPS50 + Sérum de Vitamina C con 20% de descuento',
+  'Sérum de Vitamina C': 'tu Sérum de Vitamina C en combo con Crema Hidratante Facial, 20% de descuento',
+  'Crema hidratante facial': 'tu rutina completa: Crema Hidratante + Protector Solar, con 20% de descuento',
+  'Minoxidil 5%': 'tu Minoxidil 5% en presentación trimestral con 15% de descuento y seguimiento gratuito',
+  'Ácido hialurónico tópico': 'un combo Ácido Hialurónico + Crema Hidratante con 20% de descuento',
+  'Tretinoína crema 0.05%': 'seguimiento de tu tratamiento con Tretinoína 0.05% + protector solar de regalo',
+  'Fórmula infantil etapa 1': 'tu Fórmula Infantil Etapa 1 en pack ahorro (3 unidades) con 15% de descuento',
+  'Pañales talla RN': 'un combo Pañales + Fórmula Infantil con 15% de descuento y envío gratis',
+  'Paracetamol pediátrico gotas': 'un kit pediátrico (Paracetamol + Vitamina D) con 10% de descuento',
+  'Vitamina D pediátrica': 'continuar la suplementación con Vitamina D pediátrica en pack trimestral, 15% dcto',
+  'Crema para pañalitis': 'un combo Crema para Pañalitis + Pañales talla RN con 15% de descuento',
+  'Amoxicilina suspensión pediátrica': 'seguimiento post-tratamiento y 10% de descuento en tu próxima compra pediátrica'
+};
+
+function buildActionPlan(c){
+  // 1) Canal recomendado según el estado del cliente
+  let canal, canalIcon, canalRazon;
+  if (c.flags.reclamoAbierto){
+    canal = 'Llamada telefónica';
+    canalIcon = '📞';
+    canalRazon = 'Tiene un reclamo abierto: un caso sensible se resuelve mejor con atención personal e inmediata, no por mensaje.';
+  } else if (c.estado === 'rojo' && c.flags.bajaFrecuencia){
+    canal = 'Llamada telefónica';
+    canalIcon = '📞';
+    canalRazon = 'Riesgo alto de fuga con inactividad prolongada (' + c.ultimaCompra + ' días sin comprar): una llamada cercana suele recuperar mejor a este perfil que un mensaje automático.';
+  } else if (c.flags.sinApp){
+    canal = 'Mensaje de texto / WhatsApp';
+    canalIcon = '💬';
+    canalRazon = 'No usa la app, así que un mensaje directo al celular tiene más probabilidad de ser visto que una notificación push.';
+  } else {
+    canal = 'Mensaje por App / WhatsApp';
+    canalIcon = '💬';
+    canalRazon = 'Cliente activo en canales digitales: un mensaje personalizado es más ágil y menos invasivo que una llamada.';
+  }
+
+  // 2) Oferta según el último producto comprado
+  const promo = PROMO_POR_PRODUCTO[c.ultimoProducto] || 'una promoción especial en tu categoría de compra frecuente';
+  const nombreCorto = c.nombre.split(' ')[0];
+
+  let mensaje;
+  if (canal === 'Llamada telefónica'){
+    mensaje =
+`Guion sugerido de llamada:
+
+1. Saludar a ${nombreCorto} y agradecer su preferencia como cliente Farma-Vida.
+${c.flags.reclamoAbierto ? '2. Preguntar por el reclamo pendiente, escuchar y confirmar el estado de la solución antes de ofrecer nada más.\n' : '2. Mencionar que notaron que no ha vuelto a comprar desde hace ' + c.ultimaCompra + ' días.\n'}3. Comentar que, según su última compra de ${c.ultimoProducto}, tienen ${promo}.
+4. Preguntar si desea que le programen el pedido con delivery ${c.deliveryTipo.toLowerCase()} esta semana.
+5. Cerrar confirmando el canal de contacto preferido para el siguiente seguimiento.`;
+  } else {
+    let bebeLinea = '';
+    if (c.cluster === 'mamas'){
+      bebeLinea = ` para tu bebé de ${c.bebeEdadMeses} meses`;
+    }
+    mensaje =
+`Hola ${nombreCorto} 👋 Somos Farma-Vida.
+
+Vimos que tu última compra fue *${c.ultimoProducto}*${bebeLinea} (hace ${c.ultimaCompra} días). Pensando en ti, tenemos ${promo}.
+
+¿Te coordinamos el pedido con delivery ${c.deliveryTipo.toLowerCase()} para esta semana? Cualquier consulta, aquí estamos 💙`;
+  }
+
+  const why = `Se prioriza <b>${c.ultimoProducto}</b> porque es la última compra registrada de ${nombreCorto} (clúster ${CLUSTERS[c.cluster].label}), el indicador más reciente y confiable de su interés actual — más útil que una oferta genérica del clúster.`;
+
+  return { canal, canalIcon, canalRazon, mensaje, why };
+}
+
+function pickProducto(clusterKey){ const list = PRODUCTOS[clusterKey]; return list[randInt(0,list.length-1)]; }
+function buildHistorial(clusterKey, ultimaCompra){
+  const historial = [];
+  let diasAtras = ultimaCompra;
+  for (let k=0;k<4;k++){
+    const p = pickProducto(clusterKey);
+    historial.push({ diasAtras, producto:p.n, receta:p.receta });
+    diasAtras += randInt(12,35);
+  }
+  return historial;
+}
+
+function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function randFloat(min,max){ return Math.random()*(max-min)+min; }
+function pickCluster(){
+  const r = Math.random();
+  if (r < 0.45) return 'cronicos';
+  if (r < 0.78) return 'estetico';
+  return 'mamas';
+}
+
+function buildSuggestion(flags, clusterKey){
+  const msgs = [];
+  if (flags.bajaFrecuencia) msgs.push('Activar alerta de recompra automatizada (recordatorio personalizado).');
+  if (flags.sinApp) msgs.push('Enviar notificación push de reactivación con cupón Puntos Farma.');
+  if (flags.ticketBaja) msgs.push('Ofrecer bundle cruzado o descuento escalonado para subir el ticket promedio.');
+  if (flags.reclamoAbierto) msgs.push('Escalar el reclamo pendiente al supervisor de Call Center dentro de 24h.');
+  if (clusterKey === 'mamas' && msgs.length) msgs.push('Reforzar con recordatorio de reposición de fórmula/pañales según edad del bebé.');
+  if (!msgs.length) return 'Cliente estable. Mantener comunicación de fidelización regular y cross-sell suave.';
+  return msgs.slice(0,2).join(' ');
+}
+
+function generateClients(n){
+  const arr = [];
+  for (let i=1;i<=n;i++){
+    const clusterKey = pickCluster();
+    const cluster = CLUSTERS[clusterKey];
+    const antiguedad = randInt(1,48);
+    const ultimaCompra = randInt(1,95);
+    const ticket = Math.round(cluster.ticketBase * randFloat(0.6,1.4));
+    const ltv = Math.round(cluster.ltvBase * randFloat(0.65,1.35));
+    const deliveryTipo = Math.random() < 0.55 ? 'Tercerizado' : 'Propio';
+    const tiempoEntrega = deliveryTipo === 'Tercerizado' ? randInt(48,96) : randInt(10,40);
+
+    const flags = {
+      bajaFrecuencia: ultimaCompra > 45,
+      sinApp: Math.random() < 0.35,
+      ticketBaja: Math.random() < 0.3,
+      reclamoAbierto: Math.random() < 0.2
+    };
+    const flagsCount = Object.values(flags).filter(Boolean).length;
+    const estado = flagsCount >= 3 ? 'rojo' : (flagsCount === 2 ? 'amarillo' : 'verde');
+
+    const historial = buildHistorial(clusterKey, ultimaCompra);
+    const client = {
+      id: 'CL-' + String(i).padStart(4,'0'),
+      nombre: pickNombre(),
+      cluster: clusterKey,
+      antiguedad, ultimaCompra, ticket, ltv, deliveryTipo, tiempoEntrega,
+      flags, estado,
+      historial,
+      ultimoProducto: historial[0].producto,
+      ultimaConReceta: historial[0].receta,
+      sugerencia: buildSuggestion(flags, clusterKey)
+    };
+    if (clusterKey === 'mamas'){
+      client.bebeEdadMeses = randInt(0,24);
+      client.bebeMotivo = MOTIVOS_BEBE[randInt(0,MOTIVOS_BEBE.length-1)];
+    }
+    arr.push(client);
+  }
+  return arr;
+}
+
+let clients = generateClients(N_CLIENTES);
+let liveEvents = 0;
+
+function recomputeEstado(c){
+  const flagsCount = Object.values(c.flags).filter(Boolean).length;
+  c.estado = flagsCount >= 3 ? 'rojo' : (flagsCount === 2 ? 'amarillo' : 'verde');
+  c.sugerencia = buildSuggestion(c.flags, c.cluster);
+}
+
+function aggregate(clusterFilter){
+  const subset = clusterFilter && clusterFilter !== 'todos' ? clients.filter(c=>c.cluster===clusterFilter) : clients;
+  const counts = { verde:0, amarillo:0, rojo:0 };
+  subset.forEach(c => counts[c.estado]++);
+  const total = subset.length || 1;
+  return { subset, counts, total };
+}
+
+/* ==================== 2. TAB SWITCHING ==================== */
+function activateTab(tabName){
+  document.querySelectorAll('.navBtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tabName));
+  document.querySelectorAll('.tabPanel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+tabName).classList.add('active');
+  if (tabName === 'dashboard' && !dashboardInitialized) initDashboardCharts();
+  if (tabName === 'resumen') renderResumen();
+  if (tabName === 'dashboard') renderDashboardAlerts();
+}
+
+document.querySelectorAll('.navBtn').forEach(btn=>{
+  btn.addEventListener('click', ()=> activateTab(btn.dataset.tab));
+});
+
+/* ---- Buscador global (cliente, clúster o indicador) ---- */
+function normalizeTxt(s){
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+function performGlobalSearch(){
+  const raw = document.getElementById('globalSearch').value.trim();
+  if (!raw) return;
+  const term = normalizeTxt(raw);
+
+  const indicadores = ['churn','cac','nps','fcr','ces','ltv','roi'];
+  if (indicadores.some(k => term.includes(k))){
+    activateTab('dashboard');
+    return;
+  }
+  if (term.includes('cronic')){
+    activateTab('clientes');
+    document.getElementById('clusterFilterC').value = 'cronicos';
+    document.getElementById('searchInput').value = '';
+    currentPage = 1; renderClientTable();
+    return;
+  }
+  if (term.includes('estetic')){
+    activateTab('clientes');
+    document.getElementById('clusterFilterC').value = 'estetico';
+    document.getElementById('searchInput').value = '';
+    currentPage = 1; renderClientTable();
+    return;
+  }
+  if (term.includes('mama') || term.includes('bebe')){
+    activateTab('clientes');
+    document.getElementById('clusterFilterC').value = 'mamas';
+    document.getElementById('searchInput').value = '';
+    currentPage = 1; renderClientTable();
+    return;
+  }
+  // Búsqueda por cliente (ID o nombre)
+  activateTab('clientes');
+  document.getElementById('clusterFilterC').value = 'todos';
+  document.getElementById('estadoFilterC').value = 'todos';
+  document.getElementById('searchInput').value = raw;
+  currentPage = 1;
+  renderClientTable();
+  const matches = getFilteredClients();
+  if (matches.length === 1){
+    setTimeout(()=> openClientModal(matches[0].id), 0);
+  }
+}
+document.getElementById('globalSearchBtn').addEventListener('click', performGlobalSearch);
+document.getElementById('globalSearch').addEventListener('keydown', (e)=>{ if (e.key === 'Enter') performGlobalSearch(); });
+
+/* ==================== 3. TAB 1: RESUMEN ==================== */
+let estadoDonutChart = null;
+function renderResumen(){
+  const { counts, total } = aggregate('todos');
+  document.getElementById('totalClientesTxt').textContent = clients.length;
+
+  const ltvTotal = clients.reduce((a,c)=>a+c.ltv,0);
+  document.getElementById('heroLtv').textContent = 'S/ ' + ltvTotal.toLocaleString('es-PE');
+
+  const alerts = [];
+  const pctRojo = Math.round((counts.rojo/total)*100);
+  const pctAmarillo = Math.round((counts.amarillo/total)*100);
+  alerts.push(`<div class="alertItem rojo">🔴 <b>${counts.rojo} clientes (${pctRojo}%)</b> están en riesgo crítico de fuga. Requieren activación inmediata del protocolo de retención del CRM predictivo.</div>`);
+  alerts.push(`<div class="alertItem amarillo">🟡 <b>${counts.amarillo} clientes (${pctAmarillo}%)</b> muestran señales tempranas de alerta (baja frecuencia, ticket en descenso o app inactiva).</div>`);
+
+  const tercerizados = clients.filter(c=>c.deliveryTipo==='Tercerizado');
+  const avgTercerizado = Math.round(tercerizados.reduce((a,c)=>a+c.tiempoEntrega,0)/(tercerizados.length||1));
+  alerts.push(`<div class="alertItem rojo">🚚 El delivery <b>tercerizado</b> promedia <b>${avgTercerizado} hrs</b> de entrega, muy por encima de la meta de 24 hrs. Es la principal causa del CES crítico.</div>`);
+
+  const mamasRiesgo = clients.filter(c=>c.cluster==='mamas' && c.estado!=='verde').length;
+  alerts.push(`<div class="alertItem amarillo">👶 <b>${mamasRiesgo} clientes</b> del clúster Mamás/Bebés están en amarillo o rojo; priorizar recordatorios de reposición según edad del bebé.</div>`);
+
+  document.getElementById('resumenAlerts').innerHTML = alerts.join('');
+
+  if (estadoDonutChart) estadoDonutChart.destroy();
+  estadoDonutChart = new Chart(document.getElementById('estadoDonut'), {
+    type:'doughnut',
+    data:{ labels:['Verde','Amarillo','Rojo'], datasets:[{ data:[counts.verde,counts.amarillo,counts.rojo], backgroundColor:['#2f9e6a','#dba82e','#d95b56'] }] },
+    options:{ plugins:{ legend:{ position:'bottom', labels:{color:'#7c8a9a', font:{size:10.5}} } } }
+  });
+}
+
+/* ==================== 4. TAB 2: CLIENTES ==================== */
+let currentPage = 1;
+const PAGE_SIZE = 20;
+
+function badgesHtml(flags){
+  const map = { bajaFrecuencia:'Baja frecuencia', sinApp:'App inactiva', ticketBaja:'Ticket bajando', reclamoAbierto:'Reclamo abierto' };
+  return Object.keys(map).map(k => `<span class="badge ${flags[k]?'on':''}">${map[k]}</span>`).join('');
+}
+
+function getFilteredClients(){
+  const search = document.getElementById('searchInput').value.trim().toUpperCase();
+  const clusterF = document.getElementById('clusterFilterC').value;
+  const estadoF = document.getElementById('estadoFilterC').value;
+  return clients.filter(c=>{
+    if (search && !c.id.includes(search) && !c.nombre.toUpperCase().includes(search)) return false;
+    if (clusterF !== 'todos' && c.cluster !== clusterF) return false;
+    if (estadoF !== 'todos' && c.estado !== estadoF) return false;
+    return true;
+  });
+}
+
+function renderClientTable(){
+  const filtered = getFilteredClients();
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  if (currentPage > totalPages) currentPage = totalPages;
+  const start = (currentPage-1)*PAGE_SIZE;
+  const pageItems = filtered.slice(start, start+PAGE_SIZE);
+
+  document.getElementById('resultCount').textContent = `${filtered.length} clientes encontrados`;
+  document.getElementById('pageInfo').textContent = `Página ${currentPage} de ${totalPages}`;
+  document.getElementById('prevPage').disabled = currentPage <= 1;
+  document.getElementById('nextPage').disabled = currentPage >= totalPages;
+
+  const rows = pageItems.map(c => {
+    const estadoLabel = c.estado === 'verde' ? '🟢 Verde' : (c.estado === 'amarillo' ? '🟡 Amarillo' : '🔴 Rojo');
+    return `
+      <tr data-id="${c.id}">
+        <td>${c.id}</td>
+        <td>${c.nombre}</td>
+        <td>${CLUSTERS[c.cluster].label}</td>
+        <td>${c.antiguedad}</td>
+        <td>${c.ultimaCompra}</td>
+        <td>S/ ${c.ticket}</td>
+        <td>S/ ${c.ltv}</td>
+        <td>${c.deliveryTipo}</td>
+        <td>${c.tiempoEntrega}h</td>
+        <td>${badgesHtml(c.flags)}</td>
+        <td><span class="estado-pill ${c.estado}">${estadoLabel}</span></td>
+        <td><button class="detailBtn" data-id="${c.id}">Ver</button></td>
+      </tr>`;
+  }).join('');
+
+  document.getElementById('clientTbody').innerHTML = rows;
+}
+
+/* ==================== 4b. MODAL: PERFIL 360 DE CLIENTE ==================== */
+let modalTicketChart = null;
+
+function initials(nombre){
+  return nombre.split(' ').filter(Boolean).slice(0,2).map(p=>p[0]).join('').toUpperCase();
+}
+
+function openClientModal(id){
+  const c = clients.find(x => x.id === id);
+  if (!c) return;
+
+  document.getElementById('modalHeadName').textContent = `${c.id} — ${c.nombre}`;
+  document.getElementById('modalAvatar').textContent = initials(c.nombre);
+  document.getElementById('modalName').textContent = c.nombre;
+  document.getElementById('modalSubId').textContent = `${c.id} · Cliente hace ${c.antiguedad} meses`;
+
+  const tags = [];
+  tags.push(`<span class="modalTag cluster">${CLUSTERS[c.cluster].label}</span>`);
+  if (c.estado === 'rojo') tags.push(`<span class="modalTag risk">🔴 Riesgo de fuga</span>`);
+  else if (c.estado === 'amarillo') tags.push(`<span class="modalTag risk" style="background:#fbf1d6;color:#a3801f;">🟡 Alerta temprana</span>`);
+  else tags.push(`<span class="modalTag" style="background:#e2f2e8;color:#278356;">🟢 Estable</span>`);
+  if (c.ltv >= 1500) tags.push(`<span class="modalTag vip">★ Cliente VIP</span>`);
+  document.getElementById('modalTags').innerHTML = tags.join('');
+
+  const banner = document.getElementById('modalBanner');
+  banner.className = 'modalBanner ' + (c.estado === 'rojo' ? 'rojo' : (c.estado === 'amarillo' ? 'amarillo' : ''));
+  banner.innerHTML = `
+    <div><div class="tagLine">Próxima mejor acción</div><b>${c.sugerencia}</b></div>
+    <div style="font-size:20px; font-weight:700;">S/ ${c.ltv}<div style="font-size:10px; font-weight:400; opacity:0.85;">LTV estimado</div></div>`;
+
+  document.getElementById('modalInfoList').innerHTML = `
+    <div class="row"><span>Delivery</span><b>${c.deliveryTipo}</b></div>
+    <div class="row"><span>Tiempo de entrega</span><b>${c.tiempoEntrega} hrs</b></div>
+    <div class="row"><span>Ticket promedio</span><b>S/ ${c.ticket}</b></div>
+    <div class="row"><span>Última compra</span><b>hace ${c.ultimaCompra} días</b></div>
+    <div class="row"><span>Último producto</span><b>${c.ultimoProducto}</b></div>
+    <div class="row"><span>DNI validado</span><b>✓ ETL Puntos Farma</b></div>`;
+
+  const engagementData = [
+    { label:'Frecuencia de compra', ok:!c.flags.bajaFrecuencia, val: c.flags.bajaFrecuencia ? 'Baja (>45 días)' : 'Regular' },
+    { label:'Uso de App / canal digital', ok:!c.flags.sinApp, val: c.flags.sinApp ? 'Inactiva' : 'Activa' },
+    { label:'Evolución del ticket', ok:!c.flags.ticketBaja, val: c.flags.ticketBaja ? 'En descenso' : 'Estable' },
+    { label:'Reclamos', ok:!c.flags.reclamoAbierto, val: c.flags.reclamoAbierto ? 'Reclamo abierto' : 'Sin reclamos' }
+  ];
+  document.getElementById('engagementRows').innerHTML = engagementData.map(e => `
+    <div class="engRow">
+      <span class="engLabel"><span class="engDot" style="background:${e.ok ? 'var(--verde)' : 'var(--rojo)'};"></span>${e.label}</span>
+      <span class="engVal">${e.val}</span>
+    </div>`).join('');
+
+  const historialHtml = c.historial.map((h,idx) => `
+    <div style="display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px solid #eef1f4; font-size:12.5px;">
+      <span>${idx===0 ? '<b>Última compra</b>' : 'Compra anterior'} · hace ${h.diasAtras} días</span>
+      <span>${h.producto}</span>
+      <span class="badge ${h.receta?'on':''}">${h.receta ? 'Con receta' : 'Sin receta'}</span>
+    </div>`).join('');
+  document.getElementById('modalHistorial').innerHTML = historialHtml;
+
+  const plan = buildActionPlan(c);
+  document.getElementById('modalCanalIcon').textContent = plan.canalIcon;
+  document.getElementById('modalCanalNombre').textContent = plan.canal;
+  document.getElementById('modalCanalRazon').textContent = plan.canalRazon;
+  document.getElementById('modalSuggestionTag').textContent = plan.canal.includes('Llamada') ? 'Guion para la llamada' : 'Mensaje listo para enviar';
+  document.getElementById('modalSuggestionBox').className = 'suggestionBox ' + c.estado;
+  document.getElementById('modalSuggestionText').textContent = plan.mensaje;
+  document.getElementById('modalActionWhy').innerHTML = plan.why;
+  document.getElementById('modalCopyBtn').onclick = () => {
+    navigator.clipboard.writeText(plan.mensaje).then(()=>{
+      const tag = document.getElementById('modalCopiedTag');
+      tag.style.display = 'inline';
+      setTimeout(()=> tag.style.display = 'none', 1800);
+    });
+  };
+  document.getElementById('modalCopiedTag').style.display = 'none';
+
+  document.getElementById('modalBadges').innerHTML = badgesHtml(c.flags);
+  document.getElementById('modalBebeInfo').innerHTML = c.cluster==='mamas' ? `
+    <div class="modalSectionTitle">Datos del padre/madre y bebé</div>
+    <div style="padding:12px 14px; border-radius:8px; background:#eef8f1; font-size:12.5px; line-height:1.7;">
+      Padre/Madre: <b>${c.nombre}</b> (titular de la compra)<br>
+      Bebé: <b>${c.bebeEdadMeses} meses</b> · Motivo de compra frecuente: <b>${c.bebeMotivo}</b>
+    </div>` : '<div style="font-size:12px; color:var(--muted);">Sin datos adicionales para este clúster.</div>';
+
+  // Tabs: reset to "resumen"
+  document.querySelectorAll('.modalTabBtn').forEach(b => b.classList.toggle('active', b.dataset.mtab==='resumen'));
+  document.querySelectorAll('.modalPanel').forEach(p => p.classList.toggle('active', p.id==='mpanel-resumen'));
+
+  document.getElementById('clientModalOverlay').classList.remove('hidden');
+
+  // Mini chart: simulated ticket dynamics across recent purchases
+  const chartLabels = c.historial.slice().reverse().map(h => `hace ${h.diasAtras}d`);
+  const chartData = c.historial.slice().reverse().map((h,i) => Math.round(c.ticket * (0.85 + 0.1*i + (h.receta?0.05:0))));
+  if (modalTicketChart) modalTicketChart.destroy();
+  modalTicketChart = new Chart(document.getElementById('modalTicketChart'), {
+    type:'line',
+    data:{ labels:chartLabels, datasets:[{ label:'Ticket (S/)', data:chartData, borderColor:'#12a889', backgroundColor:'rgba(18,168,137,0.12)', fill:true, tension:0.35 }] },
+    options:{ plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:'#7c8a9a', font:{size:10}}, grid:{display:false}}, y:{ticks:{color:'#7c8a9a'}, grid:{color:'#e6ebf0'}} } }
+  });
+}
+
+function closeClientModal(){
+  document.getElementById('clientModalOverlay').classList.add('hidden');
+}
+
+document.getElementById('modalCloseBtn').addEventListener('click', closeClientModal);
+document.getElementById('clientModalOverlay').addEventListener('click', (e)=>{
+  if (e.target.id === 'clientModalOverlay') closeClientModal();
+});
+document.getElementById('modalTabs').addEventListener('click', (e)=>{
+  if (!e.target.classList.contains('modalTabBtn')) return;
+  const tab = e.target.dataset.mtab;
+  document.querySelectorAll('.modalTabBtn').forEach(b => b.classList.toggle('active', b===e.target));
+  document.querySelectorAll('.modalPanel').forEach(p => p.classList.toggle('active', p.id==='mpanel-'+tab));
+});
+
+document.getElementById('searchInput').addEventListener('input', ()=>{ currentPage=1; renderClientTable(); });
+document.getElementById('clusterFilterC').addEventListener('change', ()=>{ currentPage=1; renderClientTable(); });
+document.getElementById('estadoFilterC').addEventListener('change', ()=>{ currentPage=1; renderClientTable(); });
+document.getElementById('prevPage').addEventListener('click', ()=>{ if(currentPage>1){currentPage--; renderClientTable();} });
+document.getElementById('nextPage').addEventListener('click', ()=>{ currentPage++; renderClientTable(); });
+
+document.getElementById('clientTbody').addEventListener('click', (e)=>{
+  if (e.target.classList.contains('detailBtn')){
+    openClientModal(e.target.dataset.id);
+  }
+});
+
+/* ==================== 5. TAB 3: DASHBOARD (charts) ==================== */
+const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Set','Oct','Nov','Dic'];
+const TICK_COLOR = '#7c8a9a';
+const GRID_COLOR = '#eef1f4';
+const dataByCluster = {
+  todos: { label:'Todos los clústeres', kpis:{ churn:8.2, churnMeta:'Meta: 6.2%', cac:132, cacDelta:'+35% interanual', nps:41, npsDelta:'▲ 8 pts vs. trimestre anterior', fcr:68, fcrDelta:'▲ 6 pts vs. trimestre anterior', ces:72, cesMeta:'Meta: 24 hrs' },
+    ltv:[1840,1120,980], size:[45,33,22], cacRoi:{ cac:[45,38,62,210], roi:[3.8,4.5,2.1,0.9] },
+    churn12:[8.2,8.1,7.9,7.8,7.6,7.4,7.2,7.0,6.8,6.6,6.4,6.2],
+    nps12:[22,25,29,33,37,41,43,45,47,49,51,53],
+    fcr12:[51,54,57,60,64,68,70,72,74,76,78,80],
+    ces12:[92,90,88,86,84,82,80,78,76,75,73,72] },
+  cronicos: { label:'Pacientes Crónicos', kpis:{ churn:5.1, churnMeta:'Meta: 4.0%', cac:95, cacDelta:'+18% interanual', nps:48, npsDelta:'▲ 10 pts vs. trimestre anterior', fcr:74, fcrDelta:'▲ 7 pts vs. trimestre anterior', ces:60, cesMeta:'Meta: 24 hrs' },
+    ltv:[1840,0,0], size:[100,0,0], cacRoi:{ cac:[38,30,50,180], roi:[4.5,5.2,2.6,1.1] },
+    churn12:[6.5,6.3,6.1,6.0,5.8,5.6,5.5,5.3,5.2,5.2,5.1,5.1],
+    nps12:[30,33,36,39,42,45,46,47,47,48,48,48],
+    fcr12:[58,61,64,67,70,72,73,73,74,74,74,74],
+    ces12:[78,76,74,72,70,68,66,64,63,62,61,60] },
+  estetico: { label:'Cuidado Estético', kpis:{ churn:11.4, churnMeta:'Meta: 9.0%', cac:165, cacDelta:'+42% interanual', nps:33, npsDelta:'▲ 5 pts vs. trimestre anterior', fcr:60, fcrDelta:'▲ 4 pts vs. trimestre anterior', ces:80, cesMeta:'Meta: 24 hrs' },
+    ltv:[0,1120,0], size:[0,100,0], cacRoi:{ cac:[58,46,78,240], roi:[2.9,3.6,1.6,0.6] },
+    churn12:[13.0,12.8,12.5,12.3,12.0,11.8,11.7,11.6,11.5,11.5,11.4,11.4],
+    nps12:[18,20,23,26,29,32,32,33,33,33,33,33],
+    fcr12:[44,47,50,53,56,58,59,59,60,60,60,60],
+    ces12:[100,97,95,92,90,88,86,84,83,82,81,80] },
+  mamas: { label:'Mamás / Bebés', kpis:{ churn:9.8, churnMeta:'Meta: 7.5%', cac:140, cacDelta:'+30% interanual', nps:38, npsDelta:'▲ 6 pts vs. trimestre anterior', fcr:65, fcrDelta:'▲ 5 pts vs. trimestre anterior', ces:74, cesMeta:'Meta: 24 hrs' },
+    ltv:[0,0,980], size:[0,0,100], cacRoi:{ cac:[48,40,64,220], roi:[3.4,4.0,2.0,0.8] },
+    churn12:[11.0,10.8,10.6,10.4,10.2,10.0,9.9,9.9,9.8,9.8,9.8,9.8],
+    nps12:[24,26,29,32,34,36,37,37,38,38,38,38],
+    fcr12:[48,51,54,57,60,62,63,64,64,65,65,65],
+    ces12:[90,88,86,84,82,80,79,78,76,75,74,74] }
+};
+
+let dashboardInitialized = false;
+let ltvChart, cacRoiChart, segmentPie, churnTrend, npsFcrChart, cesTrend;
+
+function initDashboardCharts(){
+  dashboardInitialized = true;
+  ltvChart = new Chart(document.getElementById('ltvChart'), {
+    type:'bar', data:{ labels:['Pacientes Crónicos','Cuidado Estético','Mamás / Bebés'],
+      datasets:[{ label:'LTV (S/)', data:[1840,1120,980], backgroundColor:['#12a889','#e08a3c','#2f9e6a'], borderRadius:6 }] },
+    options:{ plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:TICK_COLOR}, grid:{display:false}}, y:{ticks:{color:TICK_COLOR}, grid:{color:GRID_COLOR}} } }
+  });
+  cacRoiChart = new Chart(document.getElementById('cacRoiChart'), {
+    data:{ labels:['Email','App Push','Redes Sociales','TV / Radio'],
+      datasets:[ { type:'bar', label:'CAC (S/)', data:[45,38,62,210], backgroundColor:'#b8c2cc', yAxisID:'y', borderRadius:5 },
+                 { type:'line', label:'ROI (x)', data:[3.8,4.5,2.1,0.9], borderColor:'#2f9e6a', backgroundColor:'#2f9e6a', yAxisID:'y1', tension:0.3 } ] },
+    options:{ plugins:{ legend:{ labels:{ color:TICK_COLOR, font:{size:10.5} } } },
+      scales:{ x:{ ticks:{color:TICK_COLOR, font:{size:10}}, grid:{display:false} },
+        y:{ position:'left', ticks:{color:TICK_COLOR}, grid:{color:GRID_COLOR}, title:{display:true,text:'CAC (S/)',color:TICK_COLOR} },
+        y1:{ position:'right', ticks:{color:TICK_COLOR}, grid:{display:false}, title:{display:true,text:'ROI (x)',color:TICK_COLOR} } } }
+  });
+  segmentPie = new Chart(document.getElementById('segmentPie'), {
+    type:'doughnut', data:{ labels:['Crónicos','Estético','Mamás / Bebés'], datasets:[{ data:[45,33,22], backgroundColor:['#12a889','#e08a3c','#2f9e6a'] }] },
+    options:{ plugins:{ legend:{ position:'bottom', labels:{color:TICK_COLOR, font:{size:10.5}} } } }
+  });
+  churnTrend = new Chart(document.getElementById('churnTrend'), {
+    type:'line', data:{ labels:MONTHS, datasets:[{ label:'Churn Rate (%)', data:dataByCluster.todos.churn12, borderColor:'#e08a3c', backgroundColor:'rgba(224,138,60,0.12)', fill:true, tension:0.3 }] },
+    options:{ plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:TICK_COLOR,font:{size:9.5}}, grid:{display:false}}, y:{ticks:{color:TICK_COLOR}, grid:{color:GRID_COLOR}} } }
+  });
+  npsFcrChart = new Chart(document.getElementById('npsFcrChart'), {
+    type:'line', data:{ labels:MONTHS, datasets:[ { label:'NPS', data:dataByCluster.todos.nps12, borderColor:'#2f9e6a', backgroundColor:'#2f9e6a', tension:0.3 },
+      { label:'FCR (%)', data:dataByCluster.todos.fcr12, borderColor:'#8b5fbf', backgroundColor:'#8b5fbf', tension:0.3 } ] },
+    options:{ plugins:{ legend:{ labels:{color:TICK_COLOR, font:{size:10.5}} } }, scales:{ x:{ticks:{color:TICK_COLOR}, grid:{display:false}}, y:{ticks:{color:TICK_COLOR}, grid:{color:GRID_COLOR}} } }
+  });
+  cesTrend = new Chart(document.getElementById('cesTrend'), {
+    type:'line', data:{ labels:MONTHS, datasets:[{ label:'Tiempo de entrega (hrs)', data:dataByCluster.todos.ces12, borderColor:'#d95b56', backgroundColor:'rgba(217,91,86,0.12)', fill:true, tension:0.3 }] },
+    options:{ plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:TICK_COLOR,font:{size:9.5}}, grid:{display:false}}, y:{ticks:{color:TICK_COLOR}, grid:{color:GRID_COLOR}} } }
+  });
+  document.getElementById('clusterFilter').addEventListener('change', updateDashboardView);
+  document.getElementById('periodoFilter').addEventListener('change', updateDashboardView);
+  updateDashboardView();
+}
+
+function sliceByPeriodo(arr, periodo){ return periodo === '6m' ? arr.slice(-6) : arr; }
+
+function updateDashboardView(){
+  const cluster = document.getElementById('clusterFilter').value;
+  const periodo = document.getElementById('periodoFilter').value;
+  const d = dataByCluster[cluster];
+  const months = sliceByPeriodo(MONTHS, periodo);
+
+  document.getElementById('viewTag').textContent = `Vista: ${d.label} · ${periodo==='6m'?'6 meses':'12 meses'}`;
+  document.getElementById('kpiChurn').textContent = d.kpis.churn.toFixed(1)+'%';
+  document.getElementById('kpiChurnDelta').textContent = d.kpis.churnMeta;
+  document.getElementById('kpiCac').textContent = 'S/ '+d.kpis.cac;
+  document.getElementById('kpiCacDelta').textContent = d.kpis.cacDelta;
+  document.getElementById('kpiNps').textContent = '+'+d.kpis.nps;
+  document.getElementById('kpiNpsDelta').textContent = d.kpis.npsDelta;
+  document.getElementById('kpiFcr').textContent = d.kpis.fcr+'%';
+  document.getElementById('kpiFcrDelta').textContent = d.kpis.fcrDelta;
+  document.getElementById('kpiCes').textContent = d.kpis.ces+' hrs';
+  document.getElementById('kpiCesDelta').textContent = d.kpis.cesMeta;
+
+  ltvChart.data.datasets[0].data = d.ltv; ltvChart.update();
+  segmentPie.data.datasets[0].data = d.size; segmentPie.update();
+  cacRoiChart.data.datasets[0].data = d.cacRoi.cac; cacRoiChart.data.datasets[1].data = d.cacRoi.roi; cacRoiChart.update();
+  churnTrend.data.labels = months; churnTrend.data.datasets[0].data = sliceByPeriodo(d.churn12, periodo); churnTrend.update();
+  npsFcrChart.data.labels = months; npsFcrChart.data.datasets[0].data = sliceByPeriodo(d.nps12, periodo); npsFcrChart.data.datasets[1].data = sliceByPeriodo(d.fcr12, periodo); npsFcrChart.update();
+  cesTrend.data.labels = months; cesTrend.data.datasets[0].data = sliceByPeriodo(d.ces12, periodo); cesTrend.update();
+
+  renderDashboardAlerts();
+}
+
+function renderDashboardAlerts(){
+  const clusterSel = document.getElementById('clusterFilter').value;
+  const { counts, total } = aggregate(clusterSel);
+  const pctRojo = Math.round((counts.rojo/total)*100);
+  const label = dataByCluster[clusterSel].label;
+  const items = [];
+  items.push(`<div class="alertItem rojo">🔴 En <b>${label}</b>, <b>${counts.rojo} clientes (${pctRojo}%)</b> están en zona roja del modelo predictivo de fuga (Cap. 3.3). Se recomienda activar el protocolo de retención automatizado antes de que abandonen la marca.</div>`);
+  if (dataByCluster[clusterSel].kpis.churn > 6.2){
+    items.push(`<div class="alertItem amarillo">📉 El Churn Rate de <b>${label}</b> (${dataByCluster[clusterSel].kpis.churn}%) sigue por encima de la meta corporativa (6.2%). Priorizar campañas de reactivación en este clúster.</div>`);
+  } else {
+    items.push(`<div class="alertItem verde">✅ El Churn Rate de <b>${label}</b> ya está dentro o cerca de la meta corporativa.</div>`);
+  }
+  if (dataByCluster[clusterSel].kpis.ces > 24){
+    items.push(`<div class="alertItem rojo">🚚 El tiempo de entrega (${dataByCluster[clusterSel].kpis.ces} hrs) sigue lejos de la meta de 24 hrs. Revisar la proporción de delivery tercerizado vs. propio en este clúster.</div>`);
+  }
+  document.getElementById('dashboardAlerts').innerHTML = items.join('');
+}
+
+/* ==================== 6. RELOJ Y SIMULACIÓN EN VIVO ==================== */
+function tickClock(){
+  const now = new Date();
+  document.getElementById('clockTxt').textContent = now.toLocaleTimeString('es-PE', { hour12:false });
+}
+setInterval(tickClock, 1000);
+tickClock();
+
+setInterval(()=>{
+  const c = clients[randInt(0, clients.length-1)];
+  const flagKeys = Object.keys(c.flags);
+  const key = flagKeys[randInt(0, flagKeys.length-1)];
+  c.flags[key] = Math.random() < 0.5;
+  recomputeEstado(c);
+  liveEvents++;
+  const liveEl = document.getElementById('liveEventsTxt');
+  if (liveEl) liveEl.textContent = `Eventos en vivo detectados: ${liveEvents}`;
+  if (document.getElementById('tab-clientes').classList.contains('active')) renderClientTable();
+  if (document.getElementById('tab-resumen').classList.contains('active')) renderResumen();
+}, 4000);
+
+/* ==================== 7. INIT ==================== */
+renderResumen();
+renderClientTable();
+</script>
+</body>
+</html>
